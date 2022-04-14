@@ -10,13 +10,27 @@ type Fetcher interface {
 	// Fetch returns the body of URL and
 	// a slice of URLs found on that page.
 	Fetch(url string) (body string, urls []string, err error)
-	IsFetched(url string) bool
+}
+
+type UrlMap struct {
+	crawledMap map[string]bool
+}
+
+func (urlMap *UrlMap) isCrawled(url string)bool {
+	is_crawled := urlMap.crawledMap[url]
+	if is_crawled == false {
+		urlMap.crawledMap[url] = true
+	}
+	return is_crawled
 }
 
 // Crawl uses fetcher to recursively crawl
 // pages starting with url, to a maximum of depth.
-func Crawl(url string, depth int, fetcher Fetcher) {
-	if fetcher.IsFetched(url) || depth <= 0 {
+func Crawl(url string, depth int, fetcher Fetcher, urlMap *UrlMap) {
+	// TODO: Fetch URLs in parallel.
+	// TODO: Don't fetch the same URL twice.
+	// This implementation doesn't do either:
+	if urlMap.isCrawled(url) == true || depth <= 0 {
 		return
 	}
 	body, urls, err := fetcher.Fetch(url)
@@ -27,15 +41,17 @@ func Crawl(url string, depth int, fetcher Fetcher) {
 	fmt.Printf("found: %s %q\n", url, body)
 	wg.Add(len(urls))
 	for _, u := range urls {
-		go func(u string) {
+		go func(u string){
 			defer wg.Done()
-			Crawl(u, depth-1, fetcher)
-		}(u)
+			Crawl(u, depth-1, fetcher, urlMap)
+		}(u)		
 	}
+	return
 }
 
 func main() {
-	Crawl("https://golang.org/", 4, fetcher)
+	urlMap := &UrlMap{crawledMap: make(map[string]bool)}
+	Crawl("https://golang.org/", 4, fetcher, urlMap)
 	wg.Wait()
 }
 
@@ -54,6 +70,8 @@ func (f fakeFetcher) Fetch(url string) (string, []string, error) {
 	}
 	return "", nil, fmt.Errorf("not found: %s", url)
 }
+
+var wg sync.WaitGroup
 
 // fetcher is a populated fakeFetcher.
 var fetcher = fakeFetcher{
@@ -87,20 +105,4 @@ var fetcher = fakeFetcher{
 			"https://golang.org/pkg/",
 		},
 	},
-}
-
-var (
-	fetchedURL = make(map[string]bool)
-	mu         sync.Mutex
-	wg         sync.WaitGroup
-)
-
-func (f fakeFetcher) IsFetched(url string) bool {
-	mu.Lock()
-	_, ok := fetchedURL[url]
-	if !ok {
-		fetchedURL[url] = true
-	}
-	mu.Unlock()
-	return ok
 }
