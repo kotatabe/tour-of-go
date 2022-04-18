@@ -20,12 +20,14 @@ func Walk(t *tree.Tree, ch chan int) {
 // Same determines whether the trees
 // t1 and t2 contain the same values.
 func Same(t1, t2 *tree.Tree) bool {
+	// closeするのか
 	ch1 := make(chan int)
 	ch2 := make(chan int)
 
 	go Walk(t1, ch1)
 	go Walk(t2, ch2)
 
+	// treeの最大値がわからない場合は？
 	x, y := 0, 0
 	for i := 0; i < 10; i++{
 		x, y = <-ch1, <-ch2
@@ -47,9 +49,9 @@ func main() {
 		fmt.Print(<-ch, " ")
 	}
 
-	fmt.Println("\n", "==== Test Same(", tree_num1, ",", tree_num2, ") ====")	
 	tree_num1 := 2
 	tree_num2 := 3
+	fmt.Println("\n", "==== Test Same(", tree_num1, ",", tree_num2, ") ====")	
 	if b := Same(tree.New(tree_num1), tree.New(tree_num2)); b {
 		fmt.Println("Same!")
 	} else {

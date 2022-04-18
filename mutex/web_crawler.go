@@ -16,9 +16,11 @@ type UrlMap struct {
 	crawledMap map[string]bool
 }
 
+// 書き方　アーリーリターン　すぐ返す
 func (urlMap *UrlMap) isCrawled(url string)bool {
 	is_crawled := urlMap.crawledMap[url]
 	if is_crawled == false {
+		//同時に書き込む場合がある
 		urlMap.crawledMap[url] = true
 	}
 	return is_crawled
@@ -39,12 +41,14 @@ func Crawl(url string, depth int, fetcher Fetcher, urlMap *UrlMap) {
 		return
 	}
 	fmt.Printf("found: %s %q\n", url, body)
+	//他の人にわかるように説明
+	//非同期、
 	wg.Add(len(urls))
 	for _, u := range urls {
 		go func(u string){
 			defer wg.Done()
 			Crawl(u, depth-1, fetcher, urlMap)
-		}(u)		
+		}(u)
 	}
 	return
 }
