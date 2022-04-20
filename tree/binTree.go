@@ -1,13 +1,15 @@
 package main
 
 import (
-	"golang.org/x/tour/tree"
 	"fmt"
+	"sync"
+	"golang.org/x/tour/tree"
 )
 
 // Walk walks the tree t sending all values
 // from the tree to the channel ch.
 func Walk(t *tree.Tree, ch chan int) {
+	// defer close(ch)
 	if t.Left != nil {
 		Walk(t.Left, ch)
 	}
@@ -24,14 +26,16 @@ func Same(t1, t2 *tree.Tree) bool {
 	ch1 := make(chan int)
 	ch2 := make(chan int)
 
-	go Walk(t1, ch1)
+	go func() {
+		Walk(t1, ch1)
+		close(ch1)
+	}()
 	go Walk(t2, ch2)
-
+	// ch1だけでよい
 	// treeの最大値がわからない場合は？
-	// 	「size_maxを返す関数を作る」しか思いつかなかったです。
-	x, y := 0, 0
-	for i := 0; i < 10; i++ {
-		x, y = <-ch1, <-ch2
+	// defer close(ch1)
+	for i := range ch1 {
+		x, y := i, <-ch2
 		fmt.Println(x, y)
 		if x != y {
 			return false
@@ -40,20 +44,22 @@ func Same(t1, t2 *tree.Tree) bool {
 	return true
 }
 
+var wg sync.WaitGroup
+
 func main() {
 	ch := make(chan int)
-	arg := 2
+	tree_n := 2
 
-	fmt.Println("==== Test Walk(", arg, ") ====")
-	go Walk(tree.New(arg), ch)
+	fmt.Println("==== Test Walk(", tree_n, ") ====")
+	go Walk(tree.New(tree_n), ch)
 	for i := 0; i < 10; i++ {
 		fmt.Print(<-ch, " ")
 	}
 
-	arg1 := 2
-	arg2 := 3
-	fmt.Println("\n", "==== Test Same(", arg1, ",", arg2, ") ====")	
-	if b := Same(tree.New(arg1), tree.New(arg2)); b {
+	tree_n1 := 2
+	tree_n2 := 3
+	fmt.Println("\n", "==== Test Same(", tree_n1, ",", tree_n2, ") ====")	
+	if b := Same(tree.New(tree_n1), tree.New(tree_n2)); b {
 		fmt.Println("Same!")
 	} else {
 		fmt.Println("Not same..")
