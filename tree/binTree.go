@@ -9,7 +9,6 @@ import (
 // Walk walks the tree t sending all values
 // from the tree to the channel ch.
 func Walk(t *tree.Tree, ch chan int) {
-	// defer close(ch)
 	if t.Left != nil {
 		Walk(t.Left, ch)
 	}
@@ -33,7 +32,6 @@ func Same(t1, t2 *tree.Tree) bool {
 	go Walk(t2, ch2)
 	// ch1だけでよい
 	// treeの最大値がわからない場合は？
-	// defer close(ch1)
 	for i := range ch1 {
 		x, y := i, <-ch2
 		fmt.Println(x, y)
