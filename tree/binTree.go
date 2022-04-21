@@ -42,8 +42,6 @@ func Same(t1, t2 *tree.Tree) bool {
 	return true
 }
 
-var wg sync.WaitGroup
-
 func main() {
 	ch := make(chan int)
 	tree_n := 2

@@ -14,13 +14,15 @@ type Fetcher interface {
 
 type UrlMap struct {
 	crawledMap map[string]bool
-	mu sync.Mutex
+	mu         sync.Mutex
 }
 
 // アーリーリターンする
 // コンフリクトを避ける
-func (u *UrlMap) isCrawled(url string)bool {
-	if is_crawled := u.crawledMap[url]; is_crawled {
+func (u *UrlMap) isCrawled(url string) bool {
+	is_crawled := u.crawledMap[url]
+
+	if is_crawled {
 		return true
 	} else {
 		u.mu.Lock()
@@ -49,7 +51,7 @@ func Crawl(url string, depth int, fetcher Fetcher, urlMap *UrlMap) {
 	//非同期、
 	wg.Add(len(urls))
 	for _, u := range urls {
-		go func(u string){
+		go func(u string) {
 			defer wg.Done()
 			Crawl(u, depth-1, fetcher, urlMap)
 		}(u)
