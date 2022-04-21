@@ -1,8 +1,9 @@
 package main
 
 import (
-	"golang.org/x/tour/tree"
 	"fmt"
+	"sync"
+	"golang.org/x/tour/tree"
 )
 
 // Walk walks the tree t sending all values
@@ -20,20 +21,22 @@ func Walk(t *tree.Tree, ch chan int) {
 // Same determines whether the trees
 // t1 and t2 contain the same values.
 func Same(t1, t2 *tree.Tree) bool {
-	// closeするのか
+	// closeするのか　→しなくて良い
 	ch1 := make(chan int)
 	ch2 := make(chan int)
 
-	go Walk(t1, ch1)
+	go func() {
+		Walk(t1, ch1)
+		close(ch1)
+	}()
 	go Walk(t2, ch2)
-
+	// ch1だけでよい
 	// treeの最大値がわからない場合は？
-	x, y := 0, 0
-	for i := 0; i < 10; i++{
-		x, y = <-ch1, <-ch2
+	for i := range ch1 {
+		x, y := i, <-ch2
 		fmt.Println(x, y)
 		if x != y {
-			return false	
+			return false
 		}
 	}
 	return true
@@ -41,18 +44,18 @@ func Same(t1, t2 *tree.Tree) bool {
 
 func main() {
 	ch := make(chan int)
-	tree_num := 2
+	tree_n := 2
 
-	fmt.Println("==== Test Walk(", tree_num, ") ====")
-	go Walk(tree.New(tree_num), ch)
+	fmt.Println("==== Test Walk(", tree_n, ") ====")
+	go Walk(tree.New(tree_n), ch)
 	for i := 0; i < 10; i++ {
 		fmt.Print(<-ch, " ")
 	}
 
-	tree_num1 := 2
-	tree_num2 := 3
-	fmt.Println("\n", "==== Test Same(", tree_num1, ",", tree_num2, ") ====")	
-	if b := Same(tree.New(tree_num1), tree.New(tree_num2)); b {
+	tree_n1 := 2
+	tree_n2 := 3
+	fmt.Println("\n", "==== Test Same(", tree_n1, ",", tree_n2, ") ====")	
+	if b := Same(tree.New(tree_n1), tree.New(tree_n2)); b {
 		fmt.Println("Same!")
 	} else {
 		fmt.Println("Not same..")
